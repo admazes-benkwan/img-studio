@@ -128,7 +128,6 @@ export default function Page() {
       pollingTimeoutRef.current = null
     }
     setPollingOperation(null)
-    setIsLoading(false)
   }
 
   // Polling effect for video generation
@@ -164,6 +163,7 @@ export default function Page() {
             setGenerationErrorMsg('Video generation finished, but no results were returned.')
           }
           stopPolling()
+          setIsLoading(false)
         } else {
           // Not done, schedule next poll
           const jitter = pollingIntervalRef.current * JITTER_FACTOR * (Math.random() - 0.5)
@@ -175,6 +175,7 @@ export default function Page() {
         const message = error instanceof Error ? error.message : 'An unexpected error occurred.'
         setGenerationErrorMsg(`Error checking video status: ${message}`)
         stopPolling()
+        setIsLoading(false)
       }
     }
 
@@ -222,7 +223,12 @@ export default function Page() {
   }
 
   const handleVideoPollingStart = (operationName: string, metadata: OperationMetadataI) => {
-    stopPolling() // Clear any existing polling
+    // Clear any existing polling WITHOUT changing the loading state
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current)
+      pollingTimeoutRef.current = null
+    }
+
     pollingAttemptsRef.current = 0
     pollingIntervalRef.current = INITIAL_POLLING_INTERVAL_MS
     setPollingOperation({ name: operationName, metadata })
@@ -230,8 +236,8 @@ export default function Page() {
 
   const handleNewError = (newErrorMsg: string) => {
     setGenerationErrorMsg(newErrorMsg)
-    setIsLoading(false)
     stopPolling()
+    setIsLoading(false)
   }
 
   if (appContext?.isLoading) {
