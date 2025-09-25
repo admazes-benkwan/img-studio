@@ -81,7 +81,7 @@ export const GenerateVideoFormFields = {
   sampleCount: {
     label: 'Quantity of outputs',
     type: 'chip-group',
-    default: '1',
+    default: '4',
     options: ['1', '2', '3', '4'],
     isDataResetable: false,
     isFullPromptAdditionalField: false,
@@ -415,7 +415,7 @@ export const tempVeo3specificSettings = {
   sampleCount: {
     label: 'Quantity of outputs',
     type: 'chip-group',
-    default: '1',
+    default: '4',
     options: ['1', '2', '3', '4'],
     isDataResetable: false,
     isFullPromptAdditionalField: false,

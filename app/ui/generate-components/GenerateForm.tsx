@@ -235,6 +235,7 @@ export default function GenerateForm({
     }
 
     if (currentModel.includes('veo-2.0')) setValue('resolution', '720p')
+    else if (currentModel.includes('veo-3.0')) setValue('resolution', '1080p')
   }, [currentModel, isAdvancedFeaturesAvailable, isOnlyITVavailable, setValue])
 
   // Populates the prompt field from the library's initial prompt.
@@ -547,9 +548,6 @@ export default function GenerateForm({
                 currentModel.includes('veo-3.0') ? tempVeo3specificSettings : generationFields.settings
               }
               advancedSettingsFields={generationFields.advancedSettings}
-              warningMessage={
-                currentModel.includes('veo-3.0') ? 'NB: Veo 3 has different setting options than Veo 2!' : ''
-              }
             />
             {isAudioAvailable && (
               <CustomTooltip title="Add audio to your video" size="small">
