@@ -59,6 +59,11 @@ export const EditImageFormFields = {
         label: 'Imagen 3',
         indication: '',
       },
+      {
+        value: 'gemini-2.5-flash-image',
+        label: 'Gemini 2.5 Flash Image',
+        indication: 'aka Nano Banana',
+      },
     ],
     isDataResetable: false,
   },

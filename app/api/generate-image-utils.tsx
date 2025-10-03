@@ -80,8 +80,13 @@ export const GenerateImageFormFields = {
   },
   modelVersion: {
     type: 'select',
-    default: 'imagen-4.0-generate-001',
+    default: 'gemini-2.5-flash-image',
     options: [
+      {
+        value: 'gemini-2.5-flash-image',
+        label: 'Gemini 2.5 Flash Image',
+        indication: 'aka Nano Banana',
+      },
       {
         value: 'imagen-4.0-generate-001',
         label: 'Imagen 4',
