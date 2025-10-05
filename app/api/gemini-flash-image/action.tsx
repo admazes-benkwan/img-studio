@@ -400,9 +400,6 @@ export async function geminiEditImage(formData: EditImageFormI, appContext: appC
         ],
       },
     ],
-    generationConfig: {
-
-    },
   }
 
   console.log(reqData)
@@ -422,9 +419,9 @@ export async function geminiEditImage(formData: EditImageFormI, appContext: appC
       throw Error('There were an issue, no images were generated')
     }
     // NO images at all were generated out of all samples
-    if ('raiFilteredReason' in res.data.predictions[0]) {
-      throw Error(cleanResult(res.data.predictions[0].raiFilteredReason))
-    }
+    // if ('raiFilteredReason' in res.data.predictions[0]) {
+    //   throw Error(cleanResult(res.data.predictions[0].raiFilteredReason))
+    // }
   } catch (error) {
     console.error(error)
 
