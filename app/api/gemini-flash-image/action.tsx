@@ -201,6 +201,7 @@ export async function geminiGenerateImage(
   formData: GenerateImageFormI,
   appContext: appContextDataI | null
 ) {
+  console.log("function geminiGenerateImage invoked.")
   // 1 - Atempting to authent to Google Cloud & fetch project informations
   let client
   try {

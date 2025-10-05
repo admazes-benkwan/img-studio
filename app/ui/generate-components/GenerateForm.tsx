@@ -399,6 +399,7 @@ export default function GenerateForm({
       if (hasReferences && areAllRefValid) setIsGeminiRewrite(false)
 
       let newGeneratedImages
+      console.log(currentModel)
       if (currentModel.includes('gemini')) {
         newGeneratedImages = await geminiGenerateImage(formData, appContext)
       } else {
