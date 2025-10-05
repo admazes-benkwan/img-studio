@@ -17,10 +17,10 @@
 import {
   GenerateImageFormI,
   ImagenModelResultI,
+  GenerateContentResponse,
+  InlineData,
   ImageI,
-  RatioToPixel,
-  referenceTypeMatching,
-  ReferenceObjectI,
+  GeminiFlashImageRatioToPixel,
   imageGenerationUtils,
 } from '../generate-image-utils'
 import { decomposeUri, downloadMediaFromGcs, getSignedURL, uploadBase64Image } from '../cloud-storage/action'
@@ -101,85 +101,6 @@ function generatePrompt(formData: any) {
   fullPrompt = normalizeSentence(fullPrompt)
 
   return fullPrompt
-}
-
-export async function buildImageListFromURI({
-  imagesInGCS,
-  aspectRatio,
-  width,
-  height,
-  usedPrompt,
-  userID,
-  modelVersion,
-  mode,
-}: {
-  imagesInGCS: ImagenModelResultI[]
-  aspectRatio: string
-  width: number
-  height: number
-  usedPrompt: string
-  userID: string
-  modelVersion: string
-  mode: string
-}) {
-  const promises = imagesInGCS.map(async (image) => {
-    if ('raiFilteredReason' in image) {
-      return {
-        warning: `${image['raiFilteredReason']}`,
-      }
-    } else {
-      const { fileName } = await decomposeUri(image.gcsUri ?? '')
-
-      const format = image.mimeType.replace('image/', '').toUpperCase()
-
-      const ID = fileName
-        .replaceAll('/', '')
-        .replace(userID, '')
-        .replace('generated-images', '')
-        .replace('edited-images', '')
-        .replace('sample_', '')
-        .replace(`.${format.toLowerCase()}`, '')
-
-      const today = new Date()
-      const formattedDate = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-
-      // Get signed URL from Cloud Storage API
-      try {
-        const signedURL: string | { error: string } = await getSignedURL(image.gcsUri ?? '')
-
-        if (typeof signedURL === 'object' && 'error' in signedURL) {
-          throw Error(cleanResult(signedURL['error']))
-        } else {
-          return {
-            src: signedURL,
-            gcsUri: image.gcsUri,
-            format: format,
-            prompt: image.prompt && image.prompt != '' ? image.prompt : usedPrompt,
-            altText: `Generated image ${fileName}`,
-            key: ID,
-            width: width,
-            height: height,
-            ratio: aspectRatio,
-            date: formattedDate,
-            author: userID,
-            modelVersion: modelVersion,
-            mode: mode,
-          }
-        }
-      } catch (error) {
-        console.error(error)
-        return {
-          error: 'Error while getting secured access to content.',
-        }
-      }
-    }
-  })
-
-  const generatedImagesToDisplay = (await Promise.all(promises)).filter(
-    (image) => image !== null
-  ) as unknown as ImageI[]
-
-  return generatedImagesToDisplay
 }
 
 export async function buildImageListFromBase64({
@@ -276,9 +197,8 @@ export async function buildImageListFromBase64({
   return generatedImagesToDisplay
 }
 
-export async function generateImage(
+export async function geminiGenerateImage(
   formData: GenerateImageFormI,
-  isGeminiRewrite: boolean,
   appContext: appContextDataI | null
 ) {
   // 1 - Atempting to authent to Google Cloud & fetch project informations
@@ -296,12 +216,12 @@ export async function generateImage(
   }
 
   const modelVersion = formData['modelVersion']
-  const location = modelVersion.includes('gemini-2.5-flash-image') ? 'us-central1' : process.env.NEXT_PUBLIC_VERTEX_API_LOCATION //Nano Banana currently supports only a few regions
+  const location = modelVersion.includes('gemini-2.5-flash-image') ? 'us-central1' : process.env.NEXT_PUBLIC_VERTEX_API_LOCATION //Gemini 2.5 Flash Image currently supports only a few regions
   const projectId = process.env.NEXT_PUBLIC_PROJECT_ID
   const geminiAPIurl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelVersion}:generateContent`
   
 
-  // 2 - Building the prompt and rewrite it if needed with Gemini
+  // 2 - Building the prompt
   let fullPrompt
   try {
     fullPrompt = generatePrompt(formData)
@@ -318,7 +238,7 @@ export async function generateImage(
 
   if (appContext === undefined) throw Error('No provided app context')
 
-  // 3 - Building Nano Banana request body
+  // 3 - Building Gemini 2.5 Flash Image request body
   let generationGcsURI = ''
   if (
     appContext === undefined ||
@@ -352,6 +272,8 @@ export async function generateImage(
     reqData.generationConfig.seed = parseInt(formData['seedNumber'])
   }
 
+  console.log(reqData)
+
   const opts = {
     url: geminiAPIurl,
     method: 'POST',
@@ -364,46 +286,37 @@ export async function generateImage(
 
     if (res.data.candidates[0].content === undefined) throw Error('There were an issue, no images were generated')
 
-    const usedRatio = RatioToPixel.find((item) => item.ratio === opts.data.parameters.aspectRatio)
+    const usedRatio = GeminiFlashImageRatioToPixel.find((item) => item.ratio === opts.data.generationConfig.imageConfig.aspectRatio)
 
-    const resultImages: ImagenModelResultI[] = res.data.predictions
+    const generateContentResponse: GenerateContentResponse = res.data
 
-    const isResultBase64Images: boolean = resultImages.every((image) => image.hasOwnProperty('bytesBase64Encoded'))
+    console.log(generateContentResponse)
 
-    // const resultImages: ImagenModelResultI[] = res.data.candidates[0].content.parts.map(part => {
-    //   return {
-    //     bytesBase64Encoded: part.inlineData.data,
-    //     mimeType: part.inlineData.mimeType,
-    //     prompt: part.text
-    //   };
-    // });
-      
-    //   res.data.candidates[0].content.parts
+    let resultImages: ImagenModelResultI[] = [];
+
+    // First, check if the candidates array is not empty to avoid a runtime error
+    if (generateContentResponse.candidates && generateContentResponse.candidates.length > 0) {
+      // Directly access the parts of the first candidate
+      resultImages = generateContentResponse.candidates[0].content.parts
+        .filter((part): part is { inlineData: InlineData } => 'inlineData' in part)
+        .map(part => ({
+          bytesBase64Encoded: part.inlineData.data,
+          mimeType: part.inlineData.mimeType,
+        }));
+    }
 
     let enhancedImageList
-    if (isResultBase64Images)
-      enhancedImageList = await buildImageListFromBase64({
-        imagesBase64: resultImages,
-        targetGcsURI: generationGcsURI,
-        aspectRatio: opts.data.parameters.aspectRatio,
-        width: usedRatio?.width ?? 0,
-        height: usedRatio?.height ?? 0,
-        usedPrompt: opts.data.instances[0].prompt,
-        userID: appContext?.userID ? appContext?.userID : '',
-        modelVersion: modelVersion,
-        mode: 'Generated',
-      })
-    else
-      enhancedImageList = await buildImageListFromURI({
-        imagesInGCS: resultImages,
-        aspectRatio: opts.data.parameters.aspectRatio,
-        width: usedRatio?.width ?? 0,
-        height: usedRatio?.height ?? 0,
-        usedPrompt: opts.data.instances[0].prompt,
-        userID: appContext?.userID ? appContext?.userID : '',
-        modelVersion: modelVersion,
-        mode: 'Generated',
-      })
+    enhancedImageList = await buildImageListFromBase64({
+      imagesBase64: resultImages,
+      targetGcsURI: generationGcsURI,
+      aspectRatio: opts.data.generationConfig.imageConfig.aspectRatio,
+      width: usedRatio?.width ?? 0,
+      height: usedRatio?.height ?? 0,
+      usedPrompt: opts.data.contents[0].parts[0].text,
+      userID: appContext?.userID ? appContext?.userID : '',
+      modelVersion: modelVersion,
+      mode: 'Generated',
+    })
 
     return enhancedImageList
   } catch (error) {

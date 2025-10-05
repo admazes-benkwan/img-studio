@@ -514,6 +514,26 @@ export interface ImagenModelResultI {
   prompt?: string
 }
 
+// Interfaces of response sent back by Gemini 2.5 Flash Image
+export interface GenerateContentResponse {
+  candidates: Candidate[];
+}
+
+interface Candidate {
+  content: {
+    role: string;
+    parts: Part[];
+  };
+}
+
+// A union type to handle the different objects within the 'parts' array
+type Part = { text: string } | { inlineData: InlineData };
+
+export interface InlineData {
+  mimeType: string;
+  data: string;
+}
+
 // Interface of Image object created after image generation
 export interface ImageI {
   src: string
@@ -538,6 +558,20 @@ export const RatioToPixel = [
   { ratio: '16:9', width: 1408, height: 768 },
   { ratio: '3:4', width: 896, height: 1280 },
   { ratio: '4:3', width: 1280, height: 896 },
+]
+
+// List of Gemini 2.5 Flash Image available ratio and their corresponding generation dimensions
+export const GeminiFlashImageRatioToPixel = [
+  { ratio: '1:1', width: 1024, height: 1024 },
+  { ratio: '2:3', width: 832, height: 1248 },
+  { ratio: '3:2', width: 1248, height: 832 },
+  { ratio: '3:4', width: 864, height: 1184 },
+  { ratio: '4:3', width: 1184, height: 864 },
+  { ratio: '4:5', width: 896, height: 1152 },
+  { ratio: '5:4', width: 1152, height: 896 },
+  { ratio: '9:16', width: 768, height: 1344 },
+  { ratio: '16:9', width: 1344, height: 768 },
+  { ratio: '21:9', width: 1536, height: 672 },
 ]
 
 // Random prompt list the user can use if they lack prompt ideas

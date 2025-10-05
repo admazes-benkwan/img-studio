@@ -59,6 +59,7 @@ const { palette } = theme
 
 import { useAppContext } from '../../context/app-context'
 import { generateImage } from '../../api/imagen/action'
+import { geminiGenerateImage } from '../../api/gemini-flash-image/action'
 import {
   chipGroupFieldsI,
   GenerateImageFormFields,
@@ -397,7 +398,12 @@ export default function GenerateForm({
 
       if (hasReferences && areAllRefValid) setIsGeminiRewrite(false)
 
-      const newGeneratedImages = await generateImage(formData, areAllRefValid, isGeminiRewrite, appContext)
+      let newGeneratedImages
+      if (currentModel.includes('gemini')) {
+        newGeneratedImages = await geminiGenerateImage(formData, appContext)
+      } else {
+        newGeneratedImages = await generateImage(formData, areAllRefValid, isGeminiRewrite, appContext)
+      }
 
       if (newGeneratedImages !== undefined && typeof newGeneratedImages === 'object' && 'error' in newGeneratedImages) {
         let errorMsg = newGeneratedImages['error'].replaceAll('Error: ', '')

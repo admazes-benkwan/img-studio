@@ -20,7 +20,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Drawer, List, ListItem, Typography, ListItemButton, Stack, IconButton, Box } from '@mui/material'
 
 import Image from 'next/image'
-import icon from '../../../public/ImgStudioLogoReversedMini.svg'
+import icon from '../../../public/Admazes Logo 7200x2000 white banner.png'
 import { pages } from '../../routes'
 
 import theme from '../../theme'
@@ -134,35 +134,6 @@ export default function SideNav() {
         </List>
       )}
 
-      {open && (
-        <Typography
-          variant="caption"
-          align="left"
-          sx={{
-            position: 'absolute',
-            bottom: 15,
-            left: 15,
-            fontSize: '0.6rem',
-            fontWeight: 400,
-            color: palette.secondary.light,
-          }}
-        >
-          / Made with <span style={{ margin: 1, color: palette.primary.main }}>❤</span> by
-          <a
-            href="https://www.linkedin.com/in/aduboue/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: 'white',
-              fontWeight: 700,
-              textDecoration: 'none',
-              margin: 2,
-            }}
-          >
-            @Agathe
-          </a>
-        </Typography>
-      )}
       <IconButton
         onClick={() => setOpen(!open)}
         sx={{
