@@ -33,7 +33,7 @@ const CustomizedMenu = {
     color: palette.text.primary,
     boxShadow: 5,
     p: 0.5,
-    width: 260,
+    width: 250,
     '& .MuiMenuItem-root': {
       background: 'transparent',
       pb: 1,
@@ -106,7 +106,7 @@ export default function GenerateSettings({
                 key={param}
                 control={control}
                 setValue={setValue}
-                width="260px"
+                width="240px"
                 field={field}
                 required={true}
               />

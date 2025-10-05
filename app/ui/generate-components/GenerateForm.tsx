@@ -257,6 +257,17 @@ export default function GenerateForm({
     }
   }, [currentSecondaryStyle, subImgStyleField, setValue])
 
+  // When switching away from a Gemini model, ensure the aspect ratio is still valid.
+  // If not (e.g., '2:1' was selected), reset it to the default.
+  useEffect(() => {
+    if (generationType === 'Image' && !currentModel.includes('gemini')) {
+      const validRatios = generationFields.settings.aspectRatio.options as string[]
+      if (selectedRatio && !validRatios.includes(selectedRatio)) {
+        setValue('aspectRatio', generationFields.settings.aspectRatio.default as string)
+      }
+    }
+  }, [currentModel])
+
   // --- Event Handlers and Helper Functions ---
   // Handles accordion expansion changes.
   const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {

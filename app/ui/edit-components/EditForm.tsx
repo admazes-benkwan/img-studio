@@ -27,6 +27,7 @@ import { ImageI } from '../../api/generate-image-utils'
 
 import theme from '../../theme'
 import { buildImageListFromURI, editImage, upscaleImage } from '../../api/imagen/action'
+import { geminiEditImage } from '../../api/gemini-flash-image/action'
 import { CustomizedAvatarButton, CustomizedIconButton, CustomizedSendButton } from '../ux-components/Button-SX'
 import CustomTooltip from '../ux-components/Tooltip'
 import { appContextDataDefault, useAppContext } from '../../context/app-context'
@@ -192,7 +193,12 @@ export default function EditForm({
       )
         throw Error('Missing either image, prompt or mask')
 
-      const newEditedImage = await editImage(formData, appContext)
+      let newEditedImage
+      if (currentModel.includes('gemini')) {
+        newEditedImage = await geminiEditImage(formData, appContext)
+      } else {
+        newEditedImage = await editImage(formData, appContext)
+      }
 
       if (newEditedImage !== undefined && typeof newEditedImage === 'object' && 'error' in newEditedImage) {
         const errorMsg = newEditedImage['error'].replaceAll('Error: ', '')
