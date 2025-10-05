@@ -335,6 +335,22 @@ export const GenerateImageFormFields = {
   },
 }
 
+export const EditImageFormFields = {
+  modelVersion: {
+    type: 'select',
+    label: 'Model version',
+    default: 'imagen-3.0-capability-001',
+    options: [
+      {
+        value: 'imagen-3.0-capability-001',
+        label: 'Imagen 3',
+        indication: '',
+      },
+    ],
+    isDataResetable: false,
+  },
+}
+
 // Reference utils for Few Shots Customization in Image Generation
 
 export const referenceTypeField = {

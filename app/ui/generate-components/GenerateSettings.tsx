@@ -106,7 +106,7 @@ export default function GenerateSettings({
                 key={param}
                 control={control}
                 setValue={setValue}
-                width="200px"
+                width="230px"
                 field={field}
                 required={true}
               />

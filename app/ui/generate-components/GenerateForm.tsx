@@ -62,6 +62,7 @@ import { generateImage } from '../../api/imagen/action'
 import { geminiGenerateImage } from '../../api/gemini-flash-image/action'
 import {
   chipGroupFieldsI,
+  EditImageFormFields,
   geminiSpecificSettings,
   GenerateImageFormFields,
   GenerateImageFormI,
@@ -72,7 +73,7 @@ import {
   ReferenceObjectInit,
   selectFieldsI,
 } from '../../api/generate-image-utils'
-import { EditImageFormFields } from '@/app/api/edit-utils'
+//import { EditImageFormFields } from '@/app/api/edit-utils'
 import {
   GenerateVideoFormFields,
   GenerateVideoFormI,
@@ -591,7 +592,7 @@ export default function GenerateForm({
               {'Generate'}
             </Button>
           </Stack>
-          {generationType === 'Image' && !currentModel.includes('gemini') && process.env.NEXT_PUBLIC_EDIT_ENABLED === 'true' && (
+          {generationType === 'Image' && process.env.NEXT_PUBLIC_EDIT_ENABLED === 'true' && (
             <Accordion
               disableGutters
               expanded={expanded === 'references'}
