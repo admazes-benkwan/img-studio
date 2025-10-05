@@ -344,7 +344,8 @@ export async function geminiGenerateImage(
   }
 }
 
-export async function editImage(formData: EditImageFormI, appContext: appContextDataI | null) {
+export async function geminiEditImage(formData: EditImageFormI, appContext: appContextDataI | null) {
+  console.log("function geminiEditImage invoked.")
   // 1 - Atempting to authent to Google Cloud & fetch project informations
   let client
   try {
@@ -359,14 +360,14 @@ export async function editImage(formData: EditImageFormI, appContext: appContext
     }
   }
 
-  const location = process.env.NEXT_PUBLIC_VERTEX_API_LOCATION
-  const projectId = process.env.NEXT_PUBLIC_PROJECT_ID
   const modelVersion = formData['modelVersion']
-  const imagenAPIurl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelVersion}:predict`
+  const location = modelVersion.includes('gemini-2.5-flash-image') ? 'us-central1' : process.env.NEXT_PUBLIC_VERTEX_API_LOCATION //Gemini 2.5 Flash Image currently supports only a few regions
+  const projectId = process.env.NEXT_PUBLIC_PROJECT_ID
+  const geminiAPIurl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelVersion}:generateContent`
 
   if (appContext === undefined) throw Error('No provided app context')
 
-  // 2 - Building Imagen request body
+  // 2 - Building Gemini 2.5 Flash Image request body
   let editGcsURI = ''
   if (
     appContext === undefined ||
@@ -382,64 +383,32 @@ export async function editImage(formData: EditImageFormI, appContext: appContext
   const refInputImage = formData['inputImage'].startsWith('data:')
     ? formData['inputImage'].split(',')[1]
     : formData['inputImage']
-  const refInputMask = formData['inputMask'].startsWith('data:')
-    ? formData['inputMask'].split(',')[1]
-    : formData['inputMask']
 
-  const editMode = formData['editMode']
-
+  console.log(formData['inputImage'].split(';')[0].split(':')[1])
+    
   const reqData = {
-    instances: [
+    contents: [
       {
-        prompt: formData.prompt as string,
-        referenceImages: [
-          {
-            referenceType: 'REFERENCE_TYPE_RAW',
-            referenceId: 1,
-            referenceImage: {
-              bytesBase64Encoded: refInputImage,
-            },
-          },
-          {
-            referenceType: 'REFERENCE_TYPE_MASK',
-            referenceId: 2,
-            referenceImage: {
-              bytesBase64Encoded: refInputMask,
-            },
-            maskImageConfig: {
-              maskMode: 'MASK_MODE_USER_PROVIDED',
-              dilation: parseFloat(formData['maskDilation']),
-            },
-          },
+        role: 'user',
+        parts: [
+          {text: formData.prompt as string},
+          {inlineData: {
+            mimeType: formData['inputImage'].split(';')[0].split(':')[1],
+            data: refInputImage,
+            }
+          }
         ],
       },
     ],
-    parameters: {
-      negativePrompt: formData['negativePrompt'],
-      editConfig: {
-        baseSteps: parseInt(formData['baseSteps']),
-      },
-      editMode: editMode,
-      sampleCount: parseInt(formData['sampleCount']),
-      outputOptions: {
-        mimeType: formData['outputOptions'],
-      },
-      includeRaiReason: true,
-      personGeneration: formData['personGeneration'],
-      storageUri: editGcsURI,
+    generationConfig: {
+
     },
   }
 
-  if (editMode === 'EDIT_MODE_BGSWAP') {
-    const referenceImage = reqData.instances[0].referenceImages[1] as any
-
-    delete referenceImage.referenceImage
-    referenceImage.maskImageConfig.maskMode = 'MASK_MODE_BACKGROUND'
-    delete referenceImage.maskImageConfig.dilation
-  }
+  console.log(reqData)
 
   const opts = {
-    url: imagenAPIurl,
+    url: geminiAPIurl,
     method: 'POST',
     data: reqData,
   }
@@ -449,7 +418,7 @@ export async function editImage(formData: EditImageFormI, appContext: appContext
   try {
     res = await client.request(opts)
 
-    if (res.data.predictions === undefined) {
+    if (res.data.candidates[0].content === undefined) {
       throw Error('There were an issue, no images were generated')
     }
     // NO images at all were generated out of all samples
@@ -479,147 +448,41 @@ export async function editImage(formData: EditImageFormI, appContext: appContext
 
   // 4 - Creating output image list
   try {
-    const resultImages: ImagenModelResultI[] = res.data.predictions
+    const generateContentResponse: GenerateContentResponse = res.data
 
-    const isResultBase64Images: boolean = resultImages.every((image) => image.hasOwnProperty('bytesBase64Encoded'))
+    console.log(generateContentResponse)
+
+    let resultImages: ImagenModelResultI[] = [];
+
+    // First, check if the candidates array is not empty to avoid a runtime error
+    if (generateContentResponse.candidates && generateContentResponse.candidates.length > 0) {
+      // Directly access the parts of the first candidate
+      resultImages = generateContentResponse.candidates[0].content.parts
+        .filter((part): part is { inlineData: InlineData } => 'inlineData' in part)
+        .map(part => ({
+          bytesBase64Encoded: part.inlineData.data,
+          mimeType: part.inlineData.mimeType,
+        }));
+    }
 
     let enhancedImageList
-    if (isResultBase64Images)
-      enhancedImageList = await buildImageListFromBase64({
-        imagesBase64: resultImages,
-        targetGcsURI: editGcsURI,
-        aspectRatio: formData['ratio'],
-        width: formData['width'],
-        height: formData['height'],
-        usedPrompt: opts.data.instances[0].prompt,
-        userID: appContext?.userID ? appContext?.userID : '',
-        modelVersion: modelVersion,
-        mode: 'Generated',
-      })
-    // else
-    //   enhancedImageList = await buildImageListFromURI({
-    //     imagesInGCS: resultImages,
-    //     aspectRatio: formData['ratio'],
-    //     width: formData['width'],
-    //     height: formData['height'],
-    //     usedPrompt: opts.data.instances[0].prompt,
-    //     userID: appContext?.userID ? appContext?.userID : '',
-    //     modelVersion: modelVersion,
-    //     mode: 'Edited',
-    //   })
+    enhancedImageList = await buildImageListFromBase64({
+      imagesBase64: resultImages,
+      targetGcsURI: editGcsURI,
+      aspectRatio: formData['ratio'],
+      width: formData['width'],
+      height: formData['height'],
+      usedPrompt: formData.prompt as string,
+      userID: appContext?.userID ? appContext?.userID : '',
+      modelVersion: modelVersion,
+      mode: 'Edited',
+    })
 
     return enhancedImageList
   } catch (error) {
     console.error(error)
     return {
       error: 'Issue while editing image.',
-    }
-  }
-}
-
-export async function upscaleImage(
-  source: { uri: string } | { base64: string },
-  upscaleFactor: string,
-  appContext: appContextDataI | null
-) {
-  // 1 - Atempting to authent to Google Cloud & fetch project informations
-  let client
-  try {
-    const auth = new GoogleAuth({
-      scopes: 'https://www.googleapis.com/auth/cloud-platform',
-    })
-    client = await auth.getClient()
-  } catch (error) {
-    console.error(error)
-    return {
-      error: 'Unable to authenticate your account to access images',
-    }
-  }
-  const location = process.env.NEXT_PUBLIC_VERTEX_API_LOCATION
-  const projectId = process.env.NEXT_PUBLIC_PROJECT_ID
-  const imagenAPIurl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagegeneration@002:predict`
-
-  // 2 (Opt) Downloading source image
-  let base64Image
-  if ('uri' in source) {
-    let res
-    try {
-      res = await downloadMediaFromGcs(source.uri)
-
-      if (typeof res === 'object' && res['error']) {
-        throw Error(res['error'].replaceAll('Error: ', ''))
-      }
-    } catch (error: any) {
-      throw Error(error)
-    }
-    const { data } = res
-    base64Image = data
-  } else {
-    base64Image = source.base64
-  }
-
-  // 3 - Building Imagen request body
-  let targetGCSuri = ''
-  if (
-    appContext === undefined ||
-    appContext === null ||
-    appContext.gcsURI === undefined ||
-    appContext.userID === undefined
-  )
-    throw Error('No provided app context')
-  else {
-    targetGCSuri = `${appContext.gcsURI}/${appContext.userID}/upscaled-images`
-  }
-
-  const base64ImageEncoded = base64Image && base64Image.startsWith('data:') ? base64Image.split(',')[1] : base64Image
-
-  const reqData = {
-    instances: [
-      {
-        prompt: '',
-        image: {
-          bytesBase64Encoded: base64ImageEncoded,
-        },
-      },
-    ],
-    parameters: {
-      sampleCount: 1,
-      mode: 'upscale',
-      upscaleConfig: {
-        upscaleFactor: upscaleFactor,
-      },
-      storageUri: targetGCSuri,
-    },
-  }
-  const opts = {
-    url: imagenAPIurl,
-    method: 'POST',
-    data: reqData,
-  }
-
-  // 4 - Upscaling images
-  try {
-    const timeout = 60000 // ms, 20s
-
-    const res = await Promise.race([
-      client.request(opts),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Upscaling timed out')), timeout)),
-    ])
-    if (res.data.predictions === undefined) {
-      throw Error('There were an issue, images could not be upscaled')
-    }
-
-    return { newGcsUri: res.data.predictions[0].gcsUri, mimeType: res.data.predictions[0].mimeType }
-  } catch (error) {
-    console.error(error)
-    if ((error as Error).message.includes('Response size too large.'))
-      return {
-        error:
-          'Image size limit exceeded. The resulting image is too large. Please try a smaller resolution or a different image.',
-      }
-
-    return {
-      error: 'Error while upscaling images.',
     }
   }
 }

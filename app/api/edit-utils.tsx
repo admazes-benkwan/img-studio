@@ -52,17 +52,17 @@ export const EditImageFormFields = {
   modelVersion: {
     type: 'select',
     label: 'Model version',
-    default: 'imagen-3.0-capability-001',
+    default: 'gemini-2.5-flash-image',
     options: [
-      {
-        value: 'imagen-3.0-capability-001',
-        label: 'Imagen 3',
-        indication: '',
-      },
       {
         value: 'gemini-2.5-flash-image',
         label: 'Gemini 2.5 Flash Image',
         indication: 'aka Nano Banana',
+      },
+      {
+        value: 'imagen-3.0-capability-001',
+        label: 'Imagen 3',
+        indication: '',
       },
     ],
     isDataResetable: false,

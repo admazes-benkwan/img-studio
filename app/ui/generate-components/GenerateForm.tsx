@@ -62,6 +62,7 @@ import { generateImage } from '../../api/imagen/action'
 import { geminiGenerateImage } from '../../api/gemini-flash-image/action'
 import {
   chipGroupFieldsI,
+  geminiSpecificSettings,
   GenerateImageFormFields,
   GenerateImageFormI,
   ImageGenerationFieldsI,
@@ -552,9 +553,11 @@ export default function GenerateForm({
               control={control}
               setValue={setValue}
               generalSettingsFields={
-                currentModel.includes('veo-3.0') ? tempVeo3specificSettings : generationFields.settings
+                currentModel.includes('gemini') ? geminiSpecificSettings : (currentModel.includes('veo-3.0') ? tempVeo3specificSettings : generationFields.settings)
               }
-              advancedSettingsFields={generationFields.advancedSettings}
+              advancedSettingsFields={
+                currentModel.includes('gemini') ? {} : generationFields.advancedSettings
+              }
             />
             {isAudioAvailable && (
               <CustomTooltip title="Add audio to your video" size="small">
@@ -576,7 +579,7 @@ export default function GenerateForm({
               {'Generate'}
             </Button>
           </Stack>
-          {generationType === 'Image' && process.env.NEXT_PUBLIC_EDIT_ENABLED === 'true' && (
+          {generationType === 'Image' && !currentModel.includes('gemini') && process.env.NEXT_PUBLIC_EDIT_ENABLED === 'true' && (
             <Accordion
               disableGutters
               expanded={expanded === 'references'}

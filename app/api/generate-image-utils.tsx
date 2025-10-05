@@ -450,10 +450,10 @@ export interface generalSettingsI {
   aspectRatio: chipGroupFieldsI
   resolution?: chipGroupFieldsI
   durationSeconds?: chipGroupFieldsI
-  sampleCount: chipGroupFieldsI
+  sampleCount?: chipGroupFieldsI
 }
 export interface advancedSettingsI {
-  personGeneration: selectFieldsI
+  personGeneration?: selectFieldsI
   outputOptions?: selectFieldsI
 }
 
@@ -504,6 +504,17 @@ export const imageGenerationUtils: ImageGenerationFieldsI = {
     (field) => GenerateImageFormFields[field].isFullPromptAdditionalField == true
   ),
   defaultValues: formDataDefaults,
+}
+
+export const geminiSpecificSettings = {
+  aspectRatio: {
+    label: 'Aspect ratio',
+    type: 'chip-group',
+    default: '1:1',
+    options: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'],
+    isDataResetable: false,
+    isFullPromptAdditionalField: false,
+  },
 }
 
 // Interface of result sent back by Imagen within GCS or as base64

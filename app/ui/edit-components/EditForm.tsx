@@ -100,6 +100,12 @@ export default function EditForm({
   const [upscaleFactor, setUpscaleFactor] = useState<string>('')
   const [openUpscaleDialog, setOpenUpscaleDialog] = useState(false)
 
+  const currentModel = watch('modelVersion')
+
+  useEffect(() => {
+    resetStates()
+  }, [currentModel])
+
   const handleNewEditMode = (value: string) => {
     resetStates()
     setValue('editMode', value)
@@ -288,7 +294,7 @@ export default function EditForm({
           )}
         </>
 
-        <EditModeMenu handleNewEditMode={handleNewEditMode} selectedEditMode={selectedEditMode} />
+        {!currentModel.includes('gemini') && <EditModeMenu handleNewEditMode={handleNewEditMode} selectedEditMode={selectedEditMode} />}
 
         <Box sx={{ pb: 4 }}>
           <EditImageDropzone
@@ -306,18 +312,18 @@ export default function EditForm({
           />
         </Box>
 
-        {selectedEditMode?.promptIndication && (
+        {(currentModel.includes('gemini') || selectedEditMode?.promptIndication) && (
           <FormInputText
             name="prompt"
             control={control}
-            label={selectedEditMode?.promptIndication ?? ''}
-            required={selectedEditMode?.mandatoryPrompt}
+            label={currentModel.includes('gemini') ? "Prompt - Describe what you want to do with your image" : (selectedEditMode?.promptIndication ?? '')}
+            required={currentModel.includes('gemini') ? true : selectedEditMode?.mandatoryPrompt}
             rows={3}
           />
         )}
 
         <Stack
-          justifyContent={selectedEditMode?.promptIndication ? 'flex-end' : 'flex-start'}
+          justifyContent={currentModel.includes('gemini') || selectedEditMode?.promptIndication ? 'flex-end' : 'flex-start'}
           direction="row"
           gap={0}
           pb={3}
@@ -335,10 +341,10 @@ export default function EditForm({
               </Avatar>
             </IconButton>
           </CustomTooltip>
-          {!isUpscaleMode && (
+          {!currentModel.includes('gemini') && !isUpscaleMode && (
             <FormInputEditSettings control={control} setValue={setValue} editSettingsFields={editSettingsFields} />
           )}
-          {selectedEditMode?.mandatoryMask && selectedEditMode?.maskType && (
+          {!currentModel.includes('gemini') && selectedEditMode?.mandatoryMask && selectedEditMode?.maskType && (
             <Button
               variant="contained"
               onClick={handleMaskDialogOpen}
@@ -351,10 +357,10 @@ export default function EditForm({
           )}
 
           <Button
-            type={isUpscaleMode ? 'button' : 'submit'}
-            onClick={isUpscaleMode ? () => setOpenUpscaleDialog(true) : undefined}
+            type={!currentModel.includes('gemini') && isUpscaleMode ? 'button' : 'submit'}
+            onClick={!currentModel.includes('gemini') && isUpscaleMode ? () => setOpenUpscaleDialog(true) : undefined}
             variant="contained"
-            disabled={(maskImage === null && selectedEditMode?.mandatoryMask) || imageToEdit === null || isLoading}
+            disabled={(!currentModel.includes('gemini') && maskImage === null && selectedEditMode?.mandatoryMask) || imageToEdit === null || isLoading}
             endIcon={isLoading ? <WatchLaterIcon /> : <SendIcon />}
             sx={CustomizedSendButton}
           >
@@ -363,7 +369,7 @@ export default function EditForm({
         </Stack>
       </form>
 
-      {selectedEditMode?.maskType && (
+      {!currentModel.includes('gemini') && selectedEditMode?.maskType && (
         <SetMaskDialog
           handleMaskDialogClose={handleMaskDialogClose}
           availableMaskTypes={maskTypes.filter((maskType) => selectedEditMode?.maskType.includes(maskType.value))}
