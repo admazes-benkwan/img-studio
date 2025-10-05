@@ -33,7 +33,7 @@ const CustomizedMenu = {
     color: palette.text.primary,
     boxShadow: 5,
     p: 0.5,
-    width: 250,
+    width: 260,
     '& .MuiMenuItem-root': {
       background: 'transparent',
       pb: 1,
@@ -47,6 +47,7 @@ export default function GenerateSettings({
   generalSettingsFields,
   advancedSettingsFields,
   warningMessage,
+  currentModel,
 }: GenerateSettingsI) {
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null)
 
@@ -129,6 +130,8 @@ export default function GenerateSettings({
             </MenuItem>
           )
         })}
+
+        {!currentModel.includes('gemini') && (
         <MenuItem key={'negativePrompt'}>
           <Box
             sx={{
@@ -161,6 +164,8 @@ export default function GenerateSettings({
             />
           </Box>
         </MenuItem>
+        )}
+
         <MenuItem
           key={'seedNumber'}
           sx={{

@@ -61,6 +61,7 @@ export interface GenerateSettingsI {
   generalSettingsFields: generalSettingsI
   advancedSettingsFields: advancedSettingsI
   warningMessage?: string
+  currentModel: string
 }
 
 export interface FormInputRadioButtonI {

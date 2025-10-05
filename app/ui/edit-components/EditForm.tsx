@@ -187,8 +187,8 @@ export default function EditForm({
     try {
       if (
         formData['inputImage'] === '' ||
-        (selectedEditMode?.mandatoryPrompt && formData['prompt'] === '') ||
-        (selectedEditMode?.mandatoryMask && formData['inputMask'] === '')
+        (!currentModel.includes('gemini') && selectedEditMode?.mandatoryPrompt && formData['prompt'] === '') ||
+        (!currentModel.includes('gemini') && selectedEditMode?.mandatoryMask && formData['inputMask'] === '')
       )
         throw Error('Missing either image, prompt or mask')
 

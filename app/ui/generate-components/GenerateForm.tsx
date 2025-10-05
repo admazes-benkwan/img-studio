@@ -558,6 +558,7 @@ export default function GenerateForm({
               advancedSettingsFields={
                 currentModel.includes('gemini') ? {} : generationFields.advancedSettings
               }
+              currentModel={currentModel}
             />
             {isAudioAvailable && (
               <CustomTooltip title="Add audio to your video" size="small">
