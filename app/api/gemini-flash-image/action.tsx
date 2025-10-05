@@ -495,17 +495,17 @@ export async function editImage(formData: EditImageFormI, appContext: appContext
         modelVersion: modelVersion,
         mode: 'Generated',
       })
-    else
-      enhancedImageList = await buildImageListFromURI({
-        imagesInGCS: resultImages,
-        aspectRatio: formData['ratio'],
-        width: formData['width'],
-        height: formData['height'],
-        usedPrompt: opts.data.instances[0].prompt,
-        userID: appContext?.userID ? appContext?.userID : '',
-        modelVersion: modelVersion,
-        mode: 'Edited',
-      })
+    // else
+    //   enhancedImageList = await buildImageListFromURI({
+    //     imagesInGCS: resultImages,
+    //     aspectRatio: formData['ratio'],
+    //     width: formData['width'],
+    //     height: formData['height'],
+    //     usedPrompt: opts.data.instances[0].prompt,
+    //     userID: appContext?.userID ? appContext?.userID : '',
+    //     modelVersion: modelVersion,
+    //     mode: 'Edited',
+    //   })
 
     return enhancedImageList
   } catch (error) {
