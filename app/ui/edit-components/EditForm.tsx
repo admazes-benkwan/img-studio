@@ -317,7 +317,7 @@ export default function EditForm({
             name="prompt"
             control={control}
             label={currentModel.includes('gemini') ? "Prompt - Describe what you want to do with your image" : (selectedEditMode?.promptIndication ?? '')}
-            required={currentModel.includes('gemini') ? true : selectedEditMode?.mandatoryPrompt}
+            required={currentModel.includes('gemini') ? true : selectedEditMode?.mandatoryPrompt ?? false}
             rows={3}
           />
         )}
