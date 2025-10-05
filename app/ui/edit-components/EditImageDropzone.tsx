@@ -39,6 +39,9 @@ export function getAspectRatio(width: number, height: number): string {
     [1, 1],
     [3, 2],
     [2, 3],
+    [5, 4],
+    [4, 5],
+    [21, 9]
   ]
 
   for (const [standardWidth, standardHeight] of standardRatios) {
