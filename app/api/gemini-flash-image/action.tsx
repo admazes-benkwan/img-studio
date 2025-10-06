@@ -285,13 +285,18 @@ export async function geminiGenerateImage(
   try {
     const res = await client.request(opts)
 
-    if (res.data.candidates[0].content === undefined) throw Error('There were an issue, no images were generated')
-
-    const usedRatio = GeminiFlashImageRatioToPixel.find((item) => item.ratio === opts.data.generationConfig.imageConfig.aspectRatio)
-
     const generateContentResponse: GenerateContentResponse = res.data
 
     console.log(generateContentResponse)
+
+    const validMimeTypes = ["image/png", "image/jpeg", "image/webp"];
+    const hasValidImage = generateContentResponse?.candidates?.[0]?.content?.parts?.some(
+      (part: any) =>
+        part.inlineData && validMimeTypes.includes(part.inlineData.mimeType)
+    );
+    if (!hasValidImage) throw Error('There were an issue, no images were generated')
+
+    const usedRatio = GeminiFlashImageRatioToPixel.find((item) => item.ratio === opts.data.generationConfig.imageConfig.aspectRatio)
 
     let resultImages: ImagenModelResultI[] = [];
 
@@ -412,16 +417,21 @@ export async function geminiEditImage(formData: EditImageFormI, appContext: appC
 
   // 3 - Editing image
   let res
+  let generateContentResponse: GenerateContentResponse
   try {
     res = await client.request(opts)
 
-    if (res.data.candidates[0].content === undefined) {
-      throw Error('There were an issue, no images were generated')
-    }
-    // NO images at all were generated out of all samples
-    // if ('raiFilteredReason' in res.data.predictions[0]) {
-    //   throw Error(cleanResult(res.data.predictions[0].raiFilteredReason))
-    // }
+    generateContentResponse = res.data
+
+    const validMimeTypes = ["image/png", "image/jpeg", "image/webp"];
+    const hasValidImage = generateContentResponse?.candidates?.[0]?.content?.parts?.some(
+      (part: any) =>
+        part.inlineData && validMimeTypes.includes(part.inlineData.mimeType)
+    );
+    if (!hasValidImage) throw Error('There were an issue, no images were generated')
+
+    console.log(generateContentResponse)
+
   } catch (error) {
     console.error(error)
 
@@ -445,10 +455,6 @@ export async function geminiEditImage(formData: EditImageFormI, appContext: appC
 
   // 4 - Creating output image list
   try {
-    const generateContentResponse: GenerateContentResponse = res.data
-
-    console.log(generateContentResponse)
-
     let resultImages: ImagenModelResultI[] = [];
 
     // First, check if the candidates array is not empty to avoid a runtime error
