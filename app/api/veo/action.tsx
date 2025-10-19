@@ -259,7 +259,7 @@ export async function generateVideo(
   const location = 'us-central1' //TODO temp - update when not in Preview anymore
   const projectId = process.env.NEXT_PUBLIC_PROJECT_ID
   let modelVersion = formData.modelVersion || GenerateVideoFormFields.modelVersion.default
-  if (isInterpolation || isCameraPreset) modelVersion = 'veo-2.0-generate-exp' //TODO temp - update when not in Preview anymore
+  if (modelVersion.includes('veo-2.0') && (isInterpolation || isCameraPreset)) modelVersion = 'veo-2.0-generate-exp' //TODO temp - update when not in Preview anymore
 
   // Construct the API URL for initiating long-running video generation
   const videoAPIUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelVersion}:predictLongRunning`
@@ -285,11 +285,11 @@ export async function generateVideo(
     storageUri: generationGcsURI,
     negativePrompt: formData.negativePrompt,
     personGeneration: formData.personGeneration,
-    generateAudio: formData.modelVersion.includes('veo-3.0') && formData.isVideoWithAudio,
+    generateAudio: formData.modelVersion.includes('veo-3') && formData.isVideoWithAudio,
   }
 
   // TODO - Temp until resolution available for all models
-  if (formData.modelVersion.includes('veo-3.0')) parameters['resolution'] = formData.resolution
+  if (formData.modelVersion.includes('veo-3')) parameters['resolution'] = formData.resolution
 
   if (formData['seedNumber']) parameters['seed'] = parseInt(formData['seedNumber'], 10)
 
@@ -384,6 +384,9 @@ export async function generateVideo(
   }
 
   // 7 - Initiate video generation request
+  console.log(fullPrompt)
+  console.log(parameters)
+
   try {
     const res = await client.request(opts)
 

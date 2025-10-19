@@ -175,7 +175,7 @@ export default function GenerateForm({
       interpolImageLast.base64Image !== '')
 
   // Determines if the current model supports audio generation.
-  const isAudioAvailable = currentModel.includes('veo-3.0')
+  const isAudioAvailable = currentModel.includes('veo-3')
   // Determines if only image-to-video is available for the current model.
   const isOnlyITVavailable =
     currentModel.includes('veo-3.0') &&
@@ -183,7 +183,7 @@ export default function GenerateForm({
     process.env.NEXT_PUBLIC_VEO_ITV_ENABLED === 'true'
   // Determines if advanced features are available for the current model.
   const isAdvancedFeaturesAvailable =
-    currentModel.includes('veo-2.0') && process.env.NEXT_PUBLIC_VEO_ADVANCED_ENABLED === 'true'
+    (currentModel.includes('veo-2.0') || currentModel.includes('veo-3.1')) && process.env.NEXT_PUBLIC_VEO_ADVANCED_ENABLED === 'true'
 
   // Determines the available secondary styles based on the selected primary style.
   const subImgStyleField = React.useMemo(() => {
@@ -236,9 +236,10 @@ export default function GenerateForm({
 
       if (!isOnlyITVavailable) setValue('interpolImageFirst', { ...InterpolImageDefaults, purpose: 'first' })
     }
+    else if (currentModel.includes('veo-3.1')) setValue('cameraPreset', '')
 
     if (currentModel.includes('veo-2.0')) setValue('resolution', '720p')
-    else if (currentModel.includes('veo-3.0')) setValue('resolution', '1080p')
+    else if (currentModel.includes('veo-3')) setValue('resolution', '1080p')
   }, [currentModel, isAdvancedFeaturesAvailable, isOnlyITVavailable, setValue])
 
   // Populates the prompt field from the library's initial prompt.
@@ -565,7 +566,7 @@ export default function GenerateForm({
               control={control}
               setValue={setValue}
               generalSettingsFields={
-                currentModel.includes('gemini') ? geminiSpecificSettings : (currentModel.includes('veo-3.0') ? tempVeo3specificSettings : generationFields.settings)
+                currentModel.includes('gemini') ? geminiSpecificSettings : (currentModel.includes('veo-3') ? tempVeo3specificSettings : generationFields.settings)
               }
               advancedSettingsFields={
                 currentModel.includes('gemini') ? {} : generationFields.advancedSettings
@@ -700,17 +701,19 @@ export default function GenerateForm({
                         orientation={orientation}
                       />
                     </Stack>
-                    <Box sx={{ py: 2 }}>
-                      <FormInputChipGroup
-                        name="cameraPreset"
-                        label={videoGenerationUtils.cameraPreset.label ?? ''}
-                        control={control}
-                        setValue={setValue}
-                        width="450px"
-                        field={videoGenerationUtils.cameraPreset as chipGroupFieldsI}
-                        required={false}
-                      />
-                    </Box>
+                    {!currentModel.includes('veo-3.1') && (
+                      <Box sx={{ py: 2 }}>
+                        <FormInputChipGroup
+                          name="cameraPreset"
+                          label={videoGenerationUtils.cameraPreset.label ?? ''}
+                          control={control}
+                          setValue={setValue}
+                          width="450px"
+                          field={videoGenerationUtils.cameraPreset as chipGroupFieldsI}
+                          required={false}
+                        />
+                      </Box>
+                    )}
                   </AccordionDetails>
                 )
               }

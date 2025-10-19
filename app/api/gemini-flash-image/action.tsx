@@ -423,14 +423,14 @@ export async function geminiEditImage(formData: EditImageFormI, appContext: appC
 
     generateContentResponse = res.data
 
+    console.log(generateContentResponse)
+
     const validMimeTypes = ["image/png", "image/jpeg", "image/webp"];
     const hasValidImage = generateContentResponse?.candidates?.[0]?.content?.parts?.some(
       (part: any) =>
         part.inlineData && validMimeTypes.includes(part.inlineData.mimeType)
     );
     if (!hasValidImage) throw Error('There were an issue, no images were generated')
-
-    console.log(generateContentResponse)
 
   } catch (error) {
     console.error(error)
